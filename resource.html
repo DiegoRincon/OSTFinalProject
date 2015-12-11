@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+   <head>
+      <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+   </head>
+   <body>
+      <b>{{ resource.name }} </b>
+      <p>Start Time: {{ resource.startTime }}</p>
+      <p>End Time: {{ resource.endTime }}</p>
+      <br/>
+      <div>
+	 <a href="/">Home</a>
+      </div>
+
+   </body>
+</html>
+{% endautoescape %}

@@ -1,8 +1,10 @@
-
+import time
+import logging
+import datetime
 import os
 import cgi
 import urllib
-
+import uuid
 from google.appengine.api import users
 from google.appengine.ext import ndb
 
@@ -12,51 +14,24 @@ import webapp2
 JINJA_ENVT = jinja2.Environment(
       loader=jinja2.FileSystemLoader(os.path.dirname(__file__)), extensions=['jinja2.ext.autoescape'], autoescape=True)
 
-MAIN_PAGE_FOOTER_TEMPLATE = """\
-      <form action="/sign?%s" method="post">
-	 <div><textarea name="content" rows="3" cols="60"></textarea></div>
-	 <div><input type="submit" value="Sign GuestBook"></div>
-      </form>
-      <hr>
-      <form>Guestbook name:
-	 <input value="%s" name="guestbook_name">
-	 <input type="submit" value="switch">
-      </form>
-      <a href="%s">%s</a>
-   </body>
-</html>
-"""
-      
+DATETIME_FORMAT = "%d/%m/%Y %H:%M"
 
-DEFAULT_GUESTBOOK_NAME = 'default_gestbook'
-
-def guestbook_key(guestbook_name=DEFAULT_GUESTBOOK_NAME):
-   """ Constructs a Datastore key for a Guestbook entity.
-
-   We use guestbook_name as the ke
+def resource_key(resId):
+   """ Constructs a Datastore key for a Resource entity.
    """
-   return ndb.Key('Gestbook', guestbook_name)
+   return ndb.Key('resId', resId)
 
 class Author(ndb.Model):
    """Sub model for representing an author."""
 
    identity = ndb.StringProperty(indexed=False)
-   email = ndb.StringProperty(indexed=False)
-
-class Greeting(ndb.Model):
-   """A main model for representing an individual Guestbook entry."""
-
-   author = ndb.StructuredProperty(Author)
-   content = ndb.StringProperty(indexed=False)
-   date = ndb.DateTimeProperty(auto_now_add=True)
+   email = ndb.StringProperty(indexed=True)
 
 class MainPage(webapp2.RequestHandler):
-
    def get(self):
-      guestbook_name = self.request.get('guestbook_name', DEFAULT_GUESTBOOK_NAME)
-      
-      greetings_query = Greeting.query(ancestor=guestbook_key(guestbook_name)).order(-Greeting.date)
-      greetings = greetings_query.fetch(10)
+
+      resource_query = Resource.query(Resource.owner.email == users.get_current_user().email()).order(-Resource.timeCreated)
+      resources = resource_query.fetch(1000)
 
       user = users.get_current_user()
 
@@ -69,8 +44,7 @@ class MainPage(webapp2.RequestHandler):
 
       template_values = {
 	    'user': user,
-	    'greetings': greetings,
-	    'guestbook_name': urllib.quote_plus(guestbook_name),
+	    'resources': resources,
 	    'url': url,
 	    'url_linktext': url_linktext,
       }
@@ -78,25 +52,61 @@ class MainPage(webapp2.RequestHandler):
       template = JINJA_ENVT.get_template('index.html')
       self.response.write(template.render(template_values))
 
-class Guestbook(webapp2.RequestHandler):
+class ResId(webapp2.RequestHandler):
+   def get(self):
+      resId = self.request.get('resId')
+      time.sleep(2)
+      resource_query = Resource.query(Resource.resourceId == resId)
+      resource = resource_query.fetch(1)[0]
+      logging.info(resource.name)
+
+      template_values = {
+	    'resource' : resource,
+	    }
+
+      template = JINJA_ENVT.get_template('resource.html')
+      self.response.write(template.render(template_values))
+
+class Resource(ndb.Model):
+   owner = ndb.StructuredProperty(Author)
+   name = ndb.StringProperty(indexed=False)
+   startTime = ndb.DateTimeProperty(indexed=True)
+   endTime = ndb.DateTimeProperty(indexed=True)
+   tags = ndb.StringProperty(repeated=True)
+   timeCreated = ndb.DateTimeProperty(auto_now_add=True)
+   resourceId = ndb.StringProperty(indexed=True)
+
+
+class Res(webapp2.RequestHandler):
    def post(self):
-      # We set the same parent key on the 'Greeting' to ensure each
-      # Greeting is in the same entity group.
+      name = self.request.get('name').strip()
+      dateString = self.request.get('date').strip()
+      startTimeString = self.request.get('start').strip()
+      startTime = datetime.datetime.strptime(dateString + " " + startTimeString, DATETIME_FORMAT)
+      endTimeString = self.request.get('end').strip()
+      endTime = datetime.datetime.strptime(dateString + " " + endTimeString, DATETIME_FORMAT)
+      tagString = self.request.get('tags').strip()
+      tags = tagString.split(' ');
+      resourceId = str(uuid.uuid1())
 
-      guestbook_name = self.request.get('guestbook_name', DEFAULT_GUESTBOOK_NAME)
-      greeting = Greeting(parent=guestbook_key(guestbook_name))
+      author = Author(identity=users.get_current_user().user_id(), email=users.get_current_user().email())
 
-      if users.get_current_user():
-	 greeting.author = Author(identity=users.get_current_user().user_id(), email=users.get_current_user().email())
+       
+      resource = Resource(parent=resource_key(resourceId),
+	    owner=author,
+	    name=name,
+	    startTime=startTime,
+	    endTime=endTime,
+	    tags=tags,
+	    resourceId = resourceId,
+	    )
+      resource.put()
 
-      greeting.content = self.request.get('content')
-      greeting.put()
-
-      query_params = {'guestbook_name': guestbook_name}
-      self.redirect('/?' + urllib.urlencode(query_params))
-
+      query_params = { 'resId' : resourceId }
+      self.redirect('/resourceId?' + urllib.urlencode(query_params))
 
 app = webapp2.WSGIApplication([
    ('/', MainPage),
-   ('/sign', Guestbook),
+   ('/resource', Res),
+   ('/resourceId', ResId),
 ], debug=True)

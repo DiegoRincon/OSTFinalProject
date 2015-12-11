@@ -15,3 +15,21 @@ indexes:
   properties:
   - name: date
     direction: desc
+
+- kind: Resource
+  properties:
+  - name: owner.email
+  - name: timeCreated
+    direction: desc
+
+- kind: Resource
+  ancestor: yes
+  properties:
+  - name: startTime
+    direction: desc
+
+- kind: Resource
+  ancestor: yes
+  properties:
+  - name: timeCreated
+    direction: desc
