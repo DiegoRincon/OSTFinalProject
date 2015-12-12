@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+   <head>
+      <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+   </head>
+   <body>
+      <h4>Resource Information</h4>
+      <b>{{ resource.name }} </b>
+      <p>Owner: {{ resource.owner.email }}</p>
+      <p>Start Time: {{ resource.startTime }}</p>
+      <p>End Time: {{ resource.endTime }}</p>
+      <br/>
+      <form action="/reservation" method="post">
+	 <input type="hidden" name="resId" value={{ resource.resourceId }}>
+	 <input type="hidden" name="date" value={{ date }}>
+	 <b>Make Reservation</b>
+	 <p>Date: {{ date }}</p>
+	 <div>
+	    <p>Start Time</p>
+	    <textarea name="start" placeholder="H:M" method="post"></textarea>
+	 </div>
+	 <div>
+	    <p>Duration</p>
+	    <input type="number" name="duration" method="post"></textarea>
+	 </div>
+	 <div><input type="submit" value="Reserve"></div>
+      </form>
+      <br />
+      <div>
+	 <a href="/">Home</a>
+      </div>
+
+   </body>
+</html>
+{% endautoescape %}

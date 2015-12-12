@@ -21,17 +21,51 @@ def resource_key(resId):
    """
    return ndb.Key('resId', resId)
 
+def reservation_key(resId):
+   return ndb.Key('resId', resId)
+
 class Author(ndb.Model):
    """Sub model for representing an author."""
 
    identity = ndb.StringProperty(indexed=False)
    email = ndb.StringProperty(indexed=True)
 
+class Reservation(ndb.Model):
+   owner = ndb.StructuredProperty(Author)
+   startTime = ndb.DateTimeProperty(indexed=True)
+   duration = ndb.IntegerProperty(indexed=False)
+   resource = ndb.StringProperty(indexed=True)
+   reservationId = ndb.StringProperty(indexed=True)
+
+class Resource(ndb.Model):
+   owner = ndb.StructuredProperty(Author)
+   name = ndb.StringProperty(indexed=False)
+   startTime = ndb.DateTimeProperty(indexed=True)
+   endTime = ndb.DateTimeProperty(indexed=True)
+   tags = ndb.StringProperty(repeated=True)
+   reservations = ndb.StructuredProperty(Reservation, repeated=True)
+   timeCreated = ndb.DateTimeProperty(auto_now_add=True)
+   resourceId = ndb.StringProperty(indexed=True)
+
+
 class MainPage(webapp2.RequestHandler):
    def get(self):
 
-      resource_query = Resource.query(Resource.owner.email == users.get_current_user().email()).order(-Resource.timeCreated)
+      myEmail = users.get_current_user().email()
+      resource_query = Resource.query(Resource.owner.email == myEmail).order(-Resource.timeCreated)
       resources = resource_query.fetch(1000)
+
+      now = datetime.datetime.now()
+      allResources_query = Resource.query(
+	    ndb.query.AND(Resource.startTime >= now)).order(-Resource.startTime)
+      allResources = allResources_query.fetch(1000)
+
+      allResources[:] = [res for res in allResources if res.owner.email != myEmail]
+
+      for resource in allResources:
+	 if (resource.owner.email == myEmail):
+	    allResources.remove(resource)
+
 
       user = users.get_current_user()
 
@@ -45,6 +79,7 @@ class MainPage(webapp2.RequestHandler):
       template_values = {
 	    'user': user,
 	    'resources': resources,
+	    'allResources': allResources,
 	    'url': url,
 	    'url_linktext': url_linktext,
       }
@@ -58,7 +93,6 @@ class ResId(webapp2.RequestHandler):
       time.sleep(2)
       resource_query = Resource.query(Resource.resourceId == resId)
       resource = resource_query.fetch(1)[0]
-      logging.info(resource.name)
 
       template_values = {
 	    'resource' : resource,
@@ -67,17 +101,60 @@ class ResId(webapp2.RequestHandler):
       template = JINJA_ENVT.get_template('resource.html')
       self.response.write(template.render(template_values))
 
-class Resource(ndb.Model):
-   owner = ndb.StructuredProperty(Author)
-   name = ndb.StringProperty(indexed=False)
-   startTime = ndb.DateTimeProperty(indexed=True)
-   endTime = ndb.DateTimeProperty(indexed=True)
-   tags = ndb.StringProperty(repeated=True)
-   timeCreated = ndb.DateTimeProperty(auto_now_add=True)
-   resourceId = ndb.StringProperty(indexed=True)
+class ReservationId(webapp2.RequestHandler):
+   def get(self):
+      resId = self.request.get('resId')
+      time.sleep(2)
+      reservation_query = Reservation.query(Reservation.reservationId == resId)
+      reservation = reservation_query.fetch(1)[0]
 
+      template_values = {
+	    'reservation' : reservation,
+	    }
+      
+      template = JINJA_ENVT.get_template('reservationId.html')
+      self.response.write(template.render(template_values))
 
-class Res(webapp2.RequestHandler):
+class MakeReservation(webapp2.RequestHandler):
+   def get(self):
+      resId = self.request.get('resId')
+      time.sleep(2)
+      resource_query = Resource.query(Resource.resourceId == resId)
+      resource = resource_query.fetch(1)[0]
+      template_values = {
+	    'resource' : resource,
+	    'date' : resource.startTime.date().strftime("%d/%m/%Y")
+	    }
+      template = JINJA_ENVT.get_template('makeReservation.html')
+      self.response.write(template.render(template_values))
+
+   def post(self):
+      resId = self.request.get('resId')
+      startTimeString = self.request.get('start').strip()
+      duration = self.request.get('duration').strip()
+      dateString = self.request.get('date').strip()
+
+      author = Author(identity=users.get_current_user().user_id(), email=users.get_current_user().email())
+      startTime = datetime.datetime.strptime(dateString + " " + startTimeString, DATETIME_FORMAT)
+      resource_query = Resource.query(Resource.resourceId == resId)
+      resource = resource_query.fetch(1)[0]
+
+      reservationId = str(uuid.uuid1())
+      
+      reservation = Reservation(parent=reservation_key(reservationId),
+	    owner=author,
+	    startTime=startTime,
+	    resource=resource.resourceId,
+	    duration=int(duration),
+	    reservationId=reservationId,
+	    )
+      reservation.put()
+      resource.reservations.append(reservation)
+
+      query_params = { 'resId' : reservationId }
+      self.redirect('/reservationId?' + urllib.urlencode(query_params))
+
+class MakeResource(webapp2.RequestHandler):
    def post(self):
       name = self.request.get('name').strip()
       dateString = self.request.get('date').strip()
@@ -105,8 +182,12 @@ class Res(webapp2.RequestHandler):
       query_params = { 'resId' : resourceId }
       self.redirect('/resourceId?' + urllib.urlencode(query_params))
 
+
+
 app = webapp2.WSGIApplication([
    ('/', MainPage),
-   ('/resource', Res),
+   ('/resource', MakeResource),
    ('/resourceId', ResId),
+   ('/reservation', MakeReservation),
+   ('/reservationId', ReservationId)
 ], debug=True)

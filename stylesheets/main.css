@@ -2,3 +2,28 @@ body {
    font-family: Verdana, Helvetica, sans-serif;
    background-color: #DDDDDD;
 }
+
+#resourceTime {
+   display: inline-block;
+}
+
+.resTime {
+   float:left;
+   padding:5px;
+}
+
+#resources {
+   display: inline-block;
+   max-width:700px;
+}
+
+.resource {
+   float:left;
+   padding:10px;
+}
+
+#allResources {
+   float:right;
+   margin-right:300px;
+   max-width:300px;
+}

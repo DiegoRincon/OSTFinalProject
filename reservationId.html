@@ -5,15 +5,14 @@
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
    </head>
    <body>
-      <b>{{ resource.name }} </b>
-      <p>Start Time: {{ resource.startTime }}</p>
-      <p>End Time: {{ resource.endTime }}</p>
+      <b>{{ reservation.resource.name }} </b>
+      <p>Start Time: {{ reservation.startTime }}</p>
+      <p>Duration: {{ reservation.duration }}</p>
       <br/>
       <div>
 	 <a href="/">Home</a>
       </div>
       <br/>
-      <a href="/reservation?resId={{ resource.resourceId }}">Make Reservation</a>
    </body>
 </html>
 {% endautoescape %}

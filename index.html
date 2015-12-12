@@ -5,22 +5,45 @@
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
    </head>
    <body>
-      {% for resource in resources %}
-      <b>{{ resource.name }} </b>
-      <p>Start Time: {{ resource.startTime }}</p>
-      <p>End Time: {{ resource.endTime }}</p>
-      {% endfor %}
-
+      <h3>My Resources</h3>
+      <div id="resources">
+	 {% for resource in resources %}
+	 <div class="resource">
+	    <b>{{ resource.name }} </b>
+	    <p>Start Time: {{ resource.startTime }}</p>
+	    <p>End Time: {{ resource.endTime }}</p>
+	    <a href="/resourceId?resId={{ resource.resourceId }}">See Resource</a>
+	 </div>
+	 {% endfor %}
+      </div>
+      <div id="allResources">
+	 <h3>All Available Resources</h3>
+	 {% for resource in allResources %}
+	 <div class="resource">
+	    <b>{{ resource.name }} </b>
+	    <p>Start Time: {{ resource.startTime }}</p>
+	    <p>End Time: {{ resource.endTime }}</p>
+	    <a href="/reservation?resId={{ resource.resourceId }}">Make Reservation</a>
+	 </div>
+	 {% endfor %}
+      </div>
+      <h3>Create New Resource</h3>
       <form action="/resource" method="post">
 	 <p>Name of Resource</p>
 	 <div><textarea name="name" method="post"></textarea></div>
-	 <div>
-	    <p>Date</p>
-	    <textarea name="date" placeholder="dd/mm/yyyy" method="post"></textarea>
-	    <p>Start Time</p>
-	    <textarea name="start" placeholder="H:M" method="post"></textarea>
-	    <p>End Time</p>
-	    <textarea name="end" placeholder="H:M" method="post"></textarea>
+	 <div id="resourceTime">
+	    <div class="resTime">
+	       <p>Date</p>
+	       <textarea name="date" placeholder="dd/mm/yyyy" method="post"></textarea>
+	    </div>
+	    <div class="resTime">
+	       <p>Start Time</p>
+	       <textarea name="start" placeholder="H:M" method="post"></textarea>
+	    </div>
+	    <div class="resTime">
+	       <p>End Time</p>
+	       <textarea name="end" placeholder="H:M" method="post"></textarea>
+	    </div>
 	 </div>
 	 <p>Tags</p>
 	 <div><textarea name="tags" placeholder="Tags separated by ';'" method="post"></textarea></div>
