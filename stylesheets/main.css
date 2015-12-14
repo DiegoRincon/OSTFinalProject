@@ -14,16 +14,44 @@ body {
 
 #resources {
    display: inline-block;
-   max-width:700px;
+   max-width:50%;
+}
+
+#reservations {
+   display: inline-block;
+   max-width:50%;
+}
+
+.reservation {
+   float: left;
+   padding: 5px;
 }
 
 .resource {
    float:left;
-   padding:10px;
+   padding:5px;
 }
 
 #allResources {
    float:right;
-   margin-right:300px;
-   max-width:300px;
+   position: absolute;
+   left:60%;
+   top:1%;
+   display;inline-block;
+}
+
+b {
+   font-size:16px;
+}
+
+p {
+   font-size:12px;
+}
+
+a {
+   font-size:14px;
+}
+
+#allResources p, #allResources b {
+   
 }

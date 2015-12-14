@@ -6,10 +6,19 @@
    </head>
    <body>
       <h4>Resource Information</h4>
+      <p style="color: red">{{ error }}</p>
       <b>{{ resource.name }} </b>
-      <p>Owner: {{ resource.owner.email }}</p>
       <p>Start Time: {{ resource.startTime }}</p>
       <p>End Time: {{ resource.endTime }}</p>
+      <div id="reservations">
+	 <h4>Reservations made on this Resource</h4>
+	 {% for reservation in reservations %}
+	 <div class="reservation">
+	    <p>Start Time: {{ reservation.startTime }}</p>
+	    <p>Duration: {{ reservation.duration }}</p>
+	 </div>
+	 {% endfor %}
+      </div>
       <br/>
       <form action="/reservation" method="post">
 	 <input type="hidden" name="resId" value={{ resource.resourceId }}>
@@ -23,14 +32,14 @@
 	 <div>
 	    <p>Duration</p>
 	    <input type="number" name="duration" method="post"></textarea>
-	 </div>
-	 <div><input type="submit" value="Reserve"></div>
-      </form>
-      <br />
-      <div>
-	 <a href="/">Home</a>
       </div>
+      <div><input type="submit" value="Reserve"></div>
+   </form>
+   <br />
+   <div>
+      <a href="/">Home</a>
+   </div>
 
-   </body>
+</body>
 </html>
 {% endautoescape %}

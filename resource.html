@@ -5,15 +5,20 @@
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
    </head>
    <body>
+      <h3>Resource</h3>
+      <a style="float:right;margin-right:400px" href="/">Home</a>
       <b>{{ resource.name }} </b>
       <p>Start Time: {{ resource.startTime }}</p>
       <p>End Time: {{ resource.endTime }}</p>
-      <br/>
-      <div>
-	 <a href="/">Home</a>
-      </div>
-      <br/>
       <a href="/reservation?resId={{ resource.resourceId }}">Make Reservation</a>
+      <br/>
+      <h4>Reservations made on this Resource</h4>
+      {% for reservation in reservations %}
+      <div class="reservation">
+	 <p>Start Time: {{ reservation.startTime }}</p>
+	 <p>Duration: {{ reservation.duration }}</p>
+      </div>
+      {% endfor %}
    </body>
 </html>
 {% endautoescape %}

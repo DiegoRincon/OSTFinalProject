@@ -5,6 +5,18 @@
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
    </head>
    <body>
+      <h2>Welcome {{ user }}</h2>
+      <h3>Upcoming Reservations</h3>
+      <div id="reservations">
+	 {% for reservation in reservations %}
+	 <div class="reservation">
+	    <b>{{ reservation.resource.name }} </b>
+	    <p>Start Time: {{ reservation.startTime }}</p>
+	    <p>Duration: {{ reservation.duration }}</p>
+	    <a href="/reservationId?resId={{ reservation.reservationId }}">See Reservation</a>
+	 </div>
+	 {% endfor %}
+      </div>
       <h3>My Resources</h3>
       <div id="resources">
 	 {% for resource in resources %}
@@ -27,6 +39,7 @@
 	 </div>
 	 {% endfor %}
       </div>
+      <br />
       <h3>Create New Resource</h3>
       <form action="/resource" method="post">
 	 <p>Name of Resource</p>
