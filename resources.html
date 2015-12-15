@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+   <head>
+      <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+   </head>
+   <body>
+      <a style="float:right;margin-right:400px" href="/">Home</a>
+      <div id="resources">
+	 <h3>Resources matching "{{ tag }}"</h3>
+	 {% for resource in resources %}
+	 <div class="resource">
+	    {% if resource.owner.email != user %}
+	    <a href="/reservation?resId={{ resource.resourceId }}">{{ resource.name }}</a>
+	    {% else %}
+	    <a href="/resourceId?resId={{ resource.resourceId }}">{{ resource.name }}</a>
+	    {% endif %}
+	    <p>Start Time: {{ resource.startTime }}</p>
+	    <p>End Time: {{ resource.endTime }}</p>
+	    {% if resource.tags %}
+	    <b>Tags:</b>
+	    {% for tag in resource.tags %}
+	    <a href="/tag?tag={{ tag }}">{{ tag }}</a>
+	    {% endfor %}
+	    {% endif %}
+	 </div>
+	 {% endfor %}
+      </div>
+   </body>
+</html>
+{% endautoescape %}

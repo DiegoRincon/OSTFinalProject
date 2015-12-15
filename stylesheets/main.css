@@ -30,6 +30,7 @@ body {
 .resource {
    float:left;
    padding:5px;
+   padding-bottom:1cm;
 }
 
 #allResources {

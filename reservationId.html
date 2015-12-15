@@ -5,14 +5,11 @@
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
    </head>
    <body>
+      <a style="float:right;margin-right:400px" href="/">Home</a>
       <b>{{ reservation.resource.name }} </b>
+      <p>User: <a href="/userId?user={{ reservation.owner.email }}">{{ reservation.owner.nickname }}</a></p>
       <p>Start Time: {{ reservation.startTime }}</p>
       <p>Duration: {{ reservation.duration }}</p>
-      <br/>
-      <div>
-	 <a href="/">Home</a>
-      </div>
-      <br/>
    </body>
 </html>
 {% endautoescape %}

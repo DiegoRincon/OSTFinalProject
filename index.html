@@ -3,43 +3,78 @@
 <html>
    <head>
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+      <style>
+	 .link {
+	    font-size:large;
+	 }
+      </style>
    </head>
    <body>
       <h2>Welcome {{ user }}</h2>
-      <h3>Upcoming Reservations</h3>
+      {% if not displayAll %}
+      <a style="float:right;margin-right:400px" href="/">Home</a>
+      {% endif %}
+
       <div id="reservations">
+	 {% if reservations %}
+	 <h3>Upcoming Reservations</h3>
 	 {% for reservation in reservations %}
 	 <div class="reservation">
-	    <b>{{ reservation.resource.name }} </b>
+	    <a class="link" href="/resourceId?resId={{ reservation.resource.resourceId }}">{{ reservation.resource.name }}</a>
 	    <p>Start Time: {{ reservation.startTime }}</p>
 	    <p>Duration: {{ reservation.duration }}</p>
-	    <a href="/reservationId?resId={{ reservation.reservationId }}">See Reservation</a>
 	 </div>
 	 {% endfor %}
+	 {% else %}
+	 <h3>You have no upcoming reservations</h3>
+	 {% endif %}
       </div>
-      <h3>My Resources</h3>
+      <br />
       <div id="resources">
+	 {% if resources %}
+	 <h3>My Resources</h3>
 	 {% for resource in resources %}
 	 <div class="resource">
-	    <b>{{ resource.name }} </b>
+	    <a class="link" href="/resourceId?resId={{ resource.resourceId }}">{{ resource.name }}</a>
 	    <p>Start Time: {{ resource.startTime }}</p>
 	    <p>End Time: {{ resource.endTime }}</p>
-	    <a href="/resourceId?resId={{ resource.resourceId }}">See Resource</a>
+	    {% if resource.tags %}
+	    <b>Tags:</b>
+	    {% for tag in resource.tags %}
+	    <a href="/tag?tag={{ tag }}">{{ tag }}</a>
+	    {% endfor %}
+	    {% endif %}
+	    <br />
 	 </div>
 	 {% endfor %}
+	 {% else %}
+	 <h3>You have no resources available</h3>
+	 {% endif %}
       </div>
+      {% if displayAll %}
       <div id="allResources">
 	 <h3>All Available Resources</h3>
 	 {% for resource in allResources %}
 	 <div class="resource">
-	    <b>{{ resource.name }} </b>
+	    <a class="link" href="/reservation?resId={{ resource.resourceId }}">{{ resource.name }}</a>
 	    <p>Start Time: {{ resource.startTime }}</p>
 	    <p>End Time: {{ resource.endTime }}</p>
-	    <a href="/reservation?resId={{ resource.resourceId }}">Make Reservation</a>
+	    {% if resource.tags %}
+	    <b>Tags:</b>
+	    {% for tag in resource.tags %}
+	    <a href="/tag?tag={{ tag }}">{{ tag }}</a>
+	    {% endfor %}
+	    {% endif %}
+	    <br />
 	 </div>
 	 {% endfor %}
       </div>
+      {% endif %}
       <br />
+      {% if displayAll %}
+      <a style="position:relative;left:20%;" class="link" href="/createResource">Create New Resource</a>
+      {% endif %}
+      <!--      
       <h3>Create New Resource</h3>
       <form action="/resource" method="post">
 	 <p>Name of Resource</p>
@@ -66,7 +101,7 @@
       <div>
 	 <a href="{{ url|safe }}">{{ url_linktext }}</a>
       </div>
-
+      -->
    </body>
 </html>
 {% endautoescape %}

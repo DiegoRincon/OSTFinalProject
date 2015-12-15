@@ -5,19 +5,25 @@
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
    </head>
    <body>
+      <a style="float:right;margin-right:400px" href="/">Home</a>
       <h4>Resource Information</h4>
       <p style="color: red">{{ error }}</p>
       <b>{{ resource.name }} </b>
       <p>Start Time: {{ resource.startTime }}</p>
       <p>End Time: {{ resource.endTime }}</p>
       <div id="reservations">
+	 {% if reservations %}
 	 <h4>Reservations made on this Resource</h4>
 	 {% for reservation in reservations %}
 	 <div class="reservation">
+	    <a href="/userId?user={{ reservation.owner.email }}">{{ reservation.owner.nickname }}</a>
 	    <p>Start Time: {{ reservation.startTime }}</p>
 	    <p>Duration: {{ reservation.duration }}</p>
 	 </div>
 	 {% endfor %}
+	 {% else %}
+	 <h4>There are no reservations for this Resource</h4>
+	 {% endif %}
       </div>
       <br/>
       <form action="/reservation" method="post">
@@ -35,11 +41,6 @@
       </div>
       <div><input type="submit" value="Reserve"></div>
    </form>
-   <br />
-   <div>
-      <a href="/">Home</a>
-   </div>
-
 </body>
 </html>
 {% endautoescape %}
