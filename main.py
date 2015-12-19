@@ -441,7 +441,7 @@ class Tag(webapp2.RequestHandler):
 
       template = JINJA_ENVT.get_template('resources.html')
       self.response.write(template.render(template_values))
-
+"""
 class RSSDump(webapp2.RequestHandler):
    def get(self):
       resId = self.request.get('resId')
@@ -457,7 +457,7 @@ class RSSDump(webapp2.RequestHandler):
       template = JINJA_ENVT.get_template('rssFeed.xml')
       self.response.headers['Content-Type'] = "application/xml"
       self.response.write(template.render(template_values))
-
+"""
 
 app = webapp2.WSGIApplication([
    ('/', MainPage),
@@ -469,5 +469,5 @@ app = webapp2.WSGIApplication([
    ('/tag', Tag),
    ('/createResource', MakeResource),
    ('/delRes', DeleteReservation),
-   ('/rss', RSSDump), 
+   """('/rss', RSSDump), """
 ], debug=True)
