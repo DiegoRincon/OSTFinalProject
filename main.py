@@ -55,10 +55,31 @@ class Reservation(ndb.Model):
    resource = ndb.StructuredProperty(Resource,indexed=True)
    reservationId = ndb.StringProperty(indexed=True)
 
+class DeleteReservation(webapp2.RequestHandler):
+   def get(self):
+      reservationId = self.request.get('resId')
+      reservation_query = Reservation.query(Reservation.reservationId == reservationId)
+      reservation = reservation_query.fetch(1)[0]
+      update = "Reservation for " + reservation.resource.name + " at " + reservation.startTime.strftime('%H:%M') + " has been deleted."
+      
+      resource_query = Resource.query(Resource.resourceId == reservation.resource.resourceId)
+      resource = resource_query.fetch(1)[0]
+
+      resource.availabilityIntervals[:] = [inter for inter in resource.availabilityIntervals if not inter.startTime == reservation.startTime]
+     
+      resource.reservations[:] = [res for res in resource.reservations if not res == reservation.reservationId]
+      resource.put()
+
+      reservation.key.delete()
+      query_params = { 'update' : update }
+      self.redirect('/?' + urllib.urlencode(query_params))
+
+
 class MainPage(webapp2.RequestHandler):
    def get(self):
       
       userId = self.request.get('user')
+      update = self.request.get('update')
       displayAll = "true"
       if userId:
 	 displayAll = ""
@@ -93,6 +114,7 @@ class MainPage(webapp2.RequestHandler):
 	    'url': url,
 	    'url_linktext': url_linktext,
 	    'displayAll' : displayAll,
+	    'update' : update,
       }
 
       template = JINJA_ENVT.get_template('index.html')
@@ -101,6 +123,7 @@ class MainPage(webapp2.RequestHandler):
 class ResId(webapp2.RequestHandler):
    def get(self):
       resId = self.request.get('resId')
+      update = self.request.get('update')
       time.sleep(2)
       resource_query = Resource.query(Resource.resourceId == resId)
       resource = resource_query.fetch(1)[0]
@@ -111,6 +134,7 @@ class ResId(webapp2.RequestHandler):
       template_values = {
 	    'resource' : resource,
 	    'reservations' : reservations,
+	    'update' : update,
 	    'user' : users.get_current_user().email() 
 	    }
 
@@ -255,7 +279,8 @@ class MakeReservation(webapp2.RequestHandler):
 	 resource.availabilityIntervals = [Interval(startTime=start,endTime=end)]
 
       resource.put()
-
+     
+      
       query_params = { 'resId' : reservationId, 'resourceId' : resource.resourceId }
       self.redirect('/reservationId?' + urllib.urlencode(query_params))
 
@@ -324,6 +349,20 @@ class MakeResource(webapp2.RequestHandler):
       tags = tagString.split(' ');
       resourceId = str(uuid.uuid1())
 
+      existingResId = self.request.get('resId')
+      if existingResId:
+	 resource_query = Resource.query(Resource.resourceId == existingResId)
+	 res = resource_query.fetch(1)[0]
+	 res.name = name
+	 res.startTime = startTime
+	 res.endTime = endTime
+	 res.tags = tags
+	 res.put()
+	 query_params = { 'resId' : existingResId, 'update' : "You have successfully updated your resource!" }
+	 self.redirect('/resourceId?' + urllib.urlencode(query_params))
+	 return
+
+
       author = Author(
 	    identity=users.get_current_user().user_id(),
 	    email=users.get_current_user().email(),
@@ -359,8 +398,6 @@ class Tag(webapp2.RequestHandler):
       template = JINJA_ENVT.get_template('resources.html')
       self.response.write(template.render(template_values))
 
-
-
 app = webapp2.WSGIApplication([
    ('/', MainPage),
    ('/resource', MakeResource),
@@ -370,4 +407,5 @@ app = webapp2.WSGIApplication([
    ('/tag', Tag),
    ('/userId', MainPage),
    ('/createResource', MakeResource),
+   ('/delRes', DeleteReservation),
 ], debug=True)

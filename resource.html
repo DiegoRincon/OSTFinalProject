@@ -6,8 +6,36 @@
    </head>
    <body>
       <a style="float:right;margin-right:400px" href="/">Home</a>
+      <div style="position:absolute;left:50%;top:15%">
+	 <form action="/resource" method="post">
+	    <h3>Edit Resource</h3>
+	    <p>Name of Resource</p>
+	    <input type="hidden" name="resId" value="{{ resource.resourceId }}"></input>
+	    <div><textarea name="name" method="post">{{ resource.name }}</textarea></div>
+	    <div id="resourceTime">
+	       <div class="resTime">
+		  <p>Date</p>
+		  <textarea name="date" method="post">{{ resource.startTime.strftime('%d/%m/%Y') }}</textarea>
+	       </div>
+	       <div class="resTime">
+		  <p>Start Time</p>
+		  <textarea name="start" method="post">{{ resource.startTime.strftime('%H:%M') }}</textarea>
+	       </div>
+	       <div class="resTime">
+		  <p>End Time</p>
+		  <textarea name="end" method="post">{{ resource.endTime.strftime('%H:%M') }}</textarea>
+	       </div>
+	    </div>
+	    <p>Tags</p>
+	    <div>
+	       <textarea name="tags" method="post">{{ resource.tags|join(' ') }}</textarea>
+	    </div>
+	    <div><input type="submit" value="Submit Changes"></div>
+	 </form>
+      </div>
       <div>
 	 <h3>Resource</h3>
+	 <p style="color:red;">{{ update }}</p>
 	 <b>{{ resource.name }} </b>
 	 <p>Start Time: {{ resource.startTime }}</p>
 	 <p>End Time: {{ resource.endTime }}</p>
