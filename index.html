@@ -10,16 +10,23 @@
       </style>
    </head>
    <body>
+      {% if not displayAll %}
+      <h2>Showing Information of User: {{user}}</h2>
+      {% else %}
       <h2>Welcome {{ user }}</h2>
+      {% endif %}
       {% if not displayAll %}
       <a style="float:right;margin-right:400px" href="/">Home</a>
       {% endif %}
       <div id="reservations">
 	 {% if reservations %}
 	 <h3>Upcoming Reservations</h3>
+	 <p style="color:red">{{ update }}<p>
+
 	 {% for reservation in reservations %}
 	 <div class="reservation">
-	    <a class="link" href="/resourceId?resId={{ reservation.resource.resourceId }}">{{ reservation.resource.name }}</a>
+	    <a class="link" href="/reservation?resId={{ reservation.resource.resourceId }}">{{ reservation.resource.name }}</a>
+	    <p>Date: {{ reservation.startDate.strftime('%d/%b/%Y') }}</p>
 	    <p>Start Time: {{ reservation.startTime }}</p>
 	    <p>Duration: {{ reservation.duration }}</p>
 	    <a href="/delRes?resId={{ reservation.reservationId }}">Delete</a>
@@ -27,8 +34,8 @@
 	 {% endfor %}
 	 {% else %}
 	 <h3>You have no upcoming reservations</h3>
-	 {% endif %}
 	 <p style="color:red">{{ update }}<p>
+	 {% endif %}
       </div>
       <br />
       <div id="resources">
@@ -37,8 +44,8 @@
 	 {% for resource in resources %}
 	 <div class="resource">
 	    <a class="link" href="/resourceId?resId={{ resource.resourceId }}">{{ resource.name }}</a>
-	    <p>Start Time: {{ resource.startTime }}</p>
-	    <p>End Time: {{ resource.endTime }}</p>
+	    <p>Start Time: {{ resource.startTime.strftime('%d/%b/%Y %H:%M') }}</p>
+	    <p>End Time: {{ resource.endTime.strftime('%d/%b/%Y %H:%M') }}</p>
 	    {% if resource.tags %}
 	    <b>Tags:</b>
 	    {% for tag in resource.tags %}
@@ -46,6 +53,7 @@
 	    {% endfor %}
 	    {% endif %}
 	    <br />
+	    <a target="_blank" href="/rss?resId={{ resource.resourceId }}">rss</a>
 	 </div>
 	 {% endfor %}
 	 {% else %}
@@ -58,8 +66,8 @@
 	 {% for resource in allResources %}
 	 <div class="resource">
 	    <a class="link" href="/reservation?resId={{ resource.resourceId }}">{{ resource.name }}</a>
-	    <p>Start Time: {{ resource.startTime }}</p>
-	    <p>End Time: {{ resource.endTime }}</p>
+	    <p>Start Time: {{ resource.startTime.strftime('%d/%b/%Y %H:%M') }}</p>
+	    <p>End Time: {{ resource.endTime.strftime('%d/%b/%Y %H:%M') }}</p>
 	    {% if resource.tags %}
 	    <b>Tags:</b>
 	    {% for tag in resource.tags %}
@@ -67,6 +75,7 @@
 	    {% endfor %}
 	    {% endif %}
 	    <br />
+	    <a target="_blank" href="/rss?resId={{ resource.resourceId }}">rss</a>
 	 </div>
 	 {% endfor %}
       </div>

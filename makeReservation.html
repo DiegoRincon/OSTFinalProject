@@ -9,14 +9,17 @@
       <h4>Resource Information</h4>
       <p style="color: red">{{ error }}</p>
       <b>{{ resource.name }} </b>
-      <p>Start Time: {{ resource.startTime }}</p>
-      <p>End Time: {{ resource.endTime }}</p>
+      <p>Start Time: {{ resource.startTime.strftime('%d/%b/%Y %H:%M') }}</p>
+      <p>End Time: {{ resource.endTime.strftime('%d/%b/%Y %H:%M') }}</p>
+      <a target="_blank" href="/rss?resId={{ resource.resourceId }}">rss</a>
+      <br/>
       <div id="reservations">
 	 {% if reservations %}
 	 <h4>Reservations made on this Resource</h4>
 	 {% for reservation in reservations %}
 	 <div class="reservation">
 	    <a href="/userId?user={{ reservation.owner.email }}">{{ reservation.owner.nickname }}</a>
+	    <p>Date: {{ reservation.startDate.strftime('%d/%b/%Y') }}</p>
 	    <p>Start Time: {{ reservation.startTime }}</p>
 	    <p>Duration: {{ reservation.duration }}</p>
 	 </div>
@@ -28,15 +31,15 @@
       <br/>
       <form action="/reservation" method="post">
 	 <input type="hidden" name="resId" value={{ resource.resourceId }}>
-	 <input type="hidden" name="date" value={{ date }}>
+	 <input type="hidden" name="date" value={{ resource.startTime.date().strftime('%d/%m/%Y') }}>
 	 <b>Make Reservation</b>
-	 <p>Date: {{ date }}</p>
+	 <p>Date: {{ resource.startTime.date().strftime('%d/%b/%Y') }}</p>
 	 <div>
 	    <p>Start Time</p>
 	    <textarea name="start" placeholder="H:M" method="post"></textarea>
 	 </div>
 	 <div>
-	    <p>Duration</p>
+	    <p>Duration (In minutes)</p>
 	    <input type="number" name="duration" method="post"></textarea>
       </div>
       <div><input type="submit" value="Reserve"></div>

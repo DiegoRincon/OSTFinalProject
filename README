@@ -2,3 +2,35 @@ Name: Diego F. Rincon Santana
 NYUID: N14716284
 
 Open Source Tools Final Project
+
+Features and functionality:
+
+The application requires you to be logged in in order to access the application page. Once logged in the user will be able to do everything described in the project description.
+There are many validation details present, so if a user tries to enter any incorrect information, the system will not accept it. The following is a list of validationchecks:
+   Resources:
+   1. Cannot have a start time in the past
+   2. Cannot have an empty name
+   3. Cannot have an end time that is before a start time
+   4. Start time and end time cannot be equal
+   
+   Reservations:
+   1. Start time cannot be before resource's start time
+   2. End time cannot go beyond resource's end time
+   3. Reservations cannot overlap
+
+   Throughout:
+   1. Dates are validated against the format d/m/Y
+
+Code design and implementation:
+
+   I used Google App Engine and Python to implement the application and Jinja2 for templates.
+   There bulk of the code is in the file 'main.py' which contains the webapp2.WSGIApplication object.
+   Within the file there is a class for each 'function'. For instance, making a resource and looking at a resource are divided into separate classes; but looking at a resource from the point of view of the owner and from the point of view of another user is contained within the same class.
+   The main page serves the purpose of home page and user-information page. Note that if the current user tries to access the user-information page for himself/herself, he/she will be redirected to the home page.
+   Other very specific tasks (such as deleting a reservation, searching by tags or RSS) have their own class in order to preserve modularity.
+   The reason I chose to leave all the python code in a single file is because it is only around 450 lines of code, therefore the burden of searching a specific block of code among files would be greater than searching within a single file.
+   I decided to keep all the logic in python to make the html files as simple as possible. As these are coupled with jinja2 templates, this way it's easier to debug and to make the necessary changes. Moreover, must of the classes make call to each other, therefore it makes sense (structurally speaking) to be included in a single file.
+   There are three entities: Resource, Reservation and Author. Each of them contains fields to allow for all the functionality of the application. In addition, Resources have 'availability intervals' which represent reservation intervals. Because of Python's declaration limits, I decided that it makes more sense to have Reservations include their Resource in their class defnition than including all the Reservation objects in the Resource.
+   
+   GIT:
+   The branch RSSFeed contains the RSS functionality.

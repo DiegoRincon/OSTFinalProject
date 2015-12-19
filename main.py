@@ -24,6 +24,13 @@ def resource_key(resId):
 def reservation_key(resId):
    return ndb.Key('resId', resId)
 
+"""TODO: Change this aweful hacky code: use pytz"""
+def toUTC(date):
+   return date + datetime.timedelta(hours=5)
+
+def toEast(date):
+   return date - datetime.timedelta(hours=5)
+
 class Author(ndb.Model):
    """Sub model for representing an author."""
    nickname = ndb.StringProperty(indexed=False)
@@ -37,14 +44,14 @@ class Interval(ndb.Model):
 class Resource(ndb.Model):
    owner = ndb.StructuredProperty(Author)
    name = ndb.StringProperty(indexed=False)
-   """TODO: need to fix this. What if user deletes reservation?"""
    availabilityIntervals = ndb.StructuredProperty(Interval,repeated=True)
    startTime = ndb.DateTimeProperty(indexed=True)
    endTime = ndb.DateTimeProperty(indexed=True)
    tags = ndb.StringProperty(repeated=True)
    reservations = ndb.StringProperty(repeated=True)
-   timeCreated = ndb.DateTimeProperty(auto_now_add=True)
+   timeCreated = ndb.DateTimeProperty(indexed=True)
    resourceId = ndb.StringProperty(indexed=True)
+   lastReservation = ndb.DateTimeProperty(indexed=True)
 
 class Reservation(ndb.Model):
    owner = ndb.StructuredProperty(Author)
@@ -60,7 +67,7 @@ class DeleteReservation(webapp2.RequestHandler):
       reservationId = self.request.get('resId')
       reservation_query = Reservation.query(Reservation.reservationId == reservationId)
       reservation = reservation_query.fetch(1)[0]
-      update = "Reservation for " + reservation.resource.name + " at " + reservation.startTime.strftime('%H:%M') + " has been deleted."
+      update = "Reservation for " + reservation.resource.name + " at " + reservation.startDate.strftime('%d/%b/%Y %H:%M') + " has been deleted."
       
       resource_query = Resource.query(Resource.resourceId == reservation.resource.resourceId)
       resource = resource_query.fetch(1)[0]
@@ -72,6 +79,7 @@ class DeleteReservation(webapp2.RequestHandler):
 
       reservation.key.delete()
       query_params = { 'update' : update }
+      time.sleep(1)
       self.redirect('/?' + urllib.urlencode(query_params))
 
 
@@ -81,22 +89,33 @@ class MainPage(webapp2.RequestHandler):
       userId = self.request.get('user')
       update = self.request.get('update')
       displayAll = "true"
-      if userId:
+      if userId and userId == users.get_current_user().email():
+	 self.redirect('/')
+	 return
+      elif userId:
 	 displayAll = ""
+      now = toEast(datetime.datetime.now())
+
       myEmail = users.get_current_user().email()
       resource_query = Resource.query(Resource.owner.email == myEmail).order(-Resource.timeCreated)
       resources = resource_query.fetch(1000)
 
-      now = datetime.datetime.now()
-      allResources_query = Resource.query(Resource.startTime >= now).order(-Resource.startTime)
+      allResources_query = Resource.query(Resource.endTime >= now).order(Resource.endTime)
       allResources = allResources_query.fetch(1000)
       allResources[:] = [res for res in allResources if res.owner.email != myEmail]
+      allResources.sort(key=lambda r: r.lastReservation)
+      allResources.reverse()
+
 
       reservations_query = Reservation.query(Reservation.endDate >= now).order(Reservation.endDate, Reservation.startDate)
       reservations = reservations_query.fetch(1000)
       reservations[:] = [res for res in reservations if res.owner.email ==myEmail]
+   
+      if userId:
+	 user = userId
+      else:
+	 user = users.get_current_user()
 
-      user = users.get_current_user()
       nickname = str(user).split("@")[0]
 
       if user:
@@ -120,10 +139,11 @@ class MainPage(webapp2.RequestHandler):
       template = JINJA_ENVT.get_template('index.html')
       self.response.write(template.render(template_values))
 
-class ResId(webapp2.RequestHandler):
+class ResourceId(webapp2.RequestHandler):
    def get(self):
       resId = self.request.get('resId')
       update = self.request.get('update')
+      error = self.request.get('error')
       time.sleep(2)
       resource_query = Resource.query(Resource.resourceId == resId)
       resource = resource_query.fetch(1)[0]
@@ -131,12 +151,18 @@ class ResId(webapp2.RequestHandler):
       reservation_query = Reservation.query(Reservation.resource.resourceId == resId)
       reservations = reservation_query.fetch(100)
 
+
       template_values = {
 	    'resource' : resource,
 	    'reservations' : reservations,
 	    'update' : update,
+	    'error' : error,
 	    'user' : users.get_current_user().email() 
 	    }
+      if users.get_current_user().email() != resource.owner.email:
+	 query_params = { 'resId' : resId}
+	 self.redirect('/reservation?' + urllib.urlencode(query_params))
+	 return
 
       template = JINJA_ENVT.get_template('resource.html')
       self.response.write(template.render(template_values))
@@ -182,7 +208,8 @@ class MakeReservation(webapp2.RequestHandler):
       resId = self.request.get('resId')
       startTimeString = self.request.get('start').strip()
       duration = self.request.get('duration').strip()
-      dateString = self.request.get('date').strip()
+      dateString = self.request.get('date')
+      logging.debug(dateString)
       
       resource_query = Resource.query(Resource.resourceId == resId)
       resource = resource_query.fetch(1)[0]
@@ -202,7 +229,6 @@ class MakeReservation(webapp2.RequestHandler):
 	 template_values = {
 	    'resource' : resource,
 	    'reservations' : reservations,
-	    'date' : resource.startTime.date().strftime("%d/%m/%Y"),
 	    'error' : "Start time did not match format (hour:minute)"
 	    }
          template = JINJA_ENVT.get_template('makeReservation.html')
@@ -216,7 +242,6 @@ class MakeReservation(webapp2.RequestHandler):
 	 template_values = {
             'resource' : resource,
 	    'reservations' : reservations,
-	    'date' : resource.startTime.date().strftime("%d/%m/%Y"),
 	    'error' : "Reservation cannot go past End Time of Resource"
 	 }
 	 template = JINJA_ENVT.get_template('makeReservation.html')
@@ -226,7 +251,6 @@ class MakeReservation(webapp2.RequestHandler):
 	 template_values = {
 	    'resource' : resource,
 	    'reservations' : reservations,
-	    'date' : resource.startTime.date().strftime("%d/%m/%Y"),
 	    'error' : "Reservation cannot start before Start Time of Resource"
 	 }
 	 template = JINJA_ENVT.get_template('makeReservation.html')
@@ -240,7 +264,6 @@ class MakeReservation(webapp2.RequestHandler):
 	 template_values = {
 	    'resource' : resource,
 	    'reservations' : reservations,
-	    'date' : resource.startTime.date().strftime("%d/%m/%Y"),
 	    'error' : "Reservation must be made within the resource availability period"
 	 }
 	 template = JINJA_ENVT.get_template('makeReservation.html')
@@ -253,7 +276,6 @@ class MakeReservation(webapp2.RequestHandler):
 	       template_values = {
 		  'resource' : resource,
 		  'reservations' : reservations,
-		  'date' : resource.startTime.date().strftime("%d/%m/%Y"),
 		  'error' : "Reservation must be made within the availability period"
 	       }
 	       template = JINJA_ENVT.get_template('makeReservation.html')
@@ -277,7 +299,7 @@ class MakeReservation(webapp2.RequestHandler):
 	 resource.availabilityIntervals.append(Interval(startTime=start, endTime=end))
       else:
 	 resource.availabilityIntervals = [Interval(startTime=start,endTime=end)]
-
+      resource.lastReservation = toEast(datetime.datetime.now())
       resource.put()
      
       
@@ -295,13 +317,18 @@ class MakeResource(webapp2.RequestHandler):
       name = self.request.get('name').strip()
       dateString = self.request.get('date').strip()
       startTimeString = self.request.get('start').strip()
+      existingResId = self.request.get('resId')
       if not name:
 	 template_values = {
 	       'user' : users.get_current_user().email(),
 	       'error' : "Name cannot be empty"
 	       }
-	 template = JINJA_ENVT.get_template('createResource.html')
-	 self.response.write(template.render(template_values))
+	 if existingResId:
+	    query_params = { 'resId' : existingResId, 'error' : "Name cannot be empty" }
+	    self.redirect('/resourceId?' + urllib.urlencode(query_params))
+	 else:
+	    template = JINJA_ENVT.get_template('createResource.html')
+	    self.response.write(template.render(template_values))
 	 return
 
       try:
@@ -311,8 +338,12 @@ class MakeResource(webapp2.RequestHandler):
 	       'user' : users.get_current_user().email(),
 	       'error' : "Date did not match format (dd/mm/yyy)"
 	       }
-	 template = JINJA_ENVT.get_template('createResource.html')
-	 self.response.write(template.render(template_values))
+	 if existingResId:
+	    query_params = { 'resId' : existingResId, 'error' : "Date did not match format (dd/mm/yyy)" }
+	    self.redirect('/resourceId?' + urllib.urlencode(query_params))
+	 else:
+	    template = JINJA_ENVT.get_template('createResource.html')
+	    self.response.write(template.render(template_values))
 	 return
 
       endTimeString = self.request.get('end').strip()
@@ -323,8 +354,12 @@ class MakeResource(webapp2.RequestHandler):
 	       'user' : users.get_current_user().email(),
 	       'error' : "Date did not match format (dd/mm/yyy)"
 	       }
-	 template = JINJA_ENVT.get_template('createResource.html')
-	 self.response.write(template.render(template_values))
+	 if existingResId:
+	    query_params = { 'resId' : existingResId, 'error' : "Date did not match format (dd/mm/yyy)" }
+	    self.redirect('/resourceId?' + urllib.urlencode(query_params))
+	 else:
+	    template = JINJA_ENVT.get_template('createResource.html')
+	    self.response.write(template.render(template_values))
 	 return
 
       if (endTime <= startTime):
@@ -332,24 +367,31 @@ class MakeResource(webapp2.RequestHandler):
 	       'user' : users.get_current_user().email(),
 	       'error' : "End Time must be later than start time"
 	       }
-	 template = JINJA_ENVT.get_template('createResource.html')
-	 self.response.write(template.render(template_values))
+	 if existingResId:
+	    query_params = { 'resId' : existingResId, 'error' : "End Time must be later than start time" }
+	    self.redirect('/resourceId?' + urllib.urlencode(query_params))
+	 else:
+	    template = JINJA_ENVT.get_template('createResource.html')
+	    self.response.write(template.render(template_values))
 	 return
 
-      if (startTime <= datetime.datetime.now()):
+      if (startTime <= toEast(datetime.datetime.now())):
 	 template_values = {
 	       'user' : users.get_current_user().email(),
 	       'error' : "Start time cannot be in the past"
 	       }
-	 template = JINJA_ENVT.get_template('createResource.html')
-	 self.response.write(template.render(template_values))
+	 if existingResId:
+	    query_params = { 'resId' : existingResId, 'error' : "Start time cannot be in the past" }
+	    self.redirect('/resourceId?' + urllib.urlencode(query_params))
+	 else:
+	    template = JINJA_ENVT.get_template('createResource.html')
+	    self.response.write(template.render(template_values))
 	 return
 
       tagString = self.request.get('tags').strip()
       tags = tagString.split(' ');
       resourceId = str(uuid.uuid1())
 
-      existingResId = self.request.get('resId')
       if existingResId:
 	 resource_query = Resource.query(Resource.resourceId == existingResId)
 	 res = resource_query.fetch(1)[0]
@@ -366,7 +408,7 @@ class MakeResource(webapp2.RequestHandler):
       author = Author(
 	    identity=users.get_current_user().user_id(),
 	    email=users.get_current_user().email(),
-	    nickname=email.split("@")[0]
+	    nickname=users.get_current_user().email().split("@")[0]
 	    )
 
       resource = Resource(parent=resource_key(resourceId),
@@ -376,6 +418,8 @@ class MakeResource(webapp2.RequestHandler):
 	    endTime=endTime,
 	    tags=tags,
 	    resourceId = resourceId,
+	    timeCreated = toEast(datetime.datetime.now()),
+	    lastReservation = datetime.datetime.fromtimestamp(1),
 	    )
       resource.put()
 
@@ -398,14 +442,32 @@ class Tag(webapp2.RequestHandler):
       template = JINJA_ENVT.get_template('resources.html')
       self.response.write(template.render(template_values))
 
+class RSSDump(webapp2.RequestHandler):
+   def get(self):
+      resId = self.request.get('resId')
+      reservation_query = Reservation.query(Reservation.resource.resourceId == resId)
+      reservations = reservation_query.fetch(100)
+      resource_query = Resource.query(Resource.resourceId == resId)
+      resource = resource_query.fetch(1)[0]
+     
+      template_values = {
+	    'resource' : resource,
+	    'reservations' : reservations,
+	    }
+      template = JINJA_ENVT.get_template('rssFeed.xml')
+      self.response.headers['Content-Type'] = "application/xml"
+      self.response.write(template.render(template_values))
+
+
 app = webapp2.WSGIApplication([
    ('/', MainPage),
+   ('/userId', MainPage),
    ('/resource', MakeResource),
-   ('/resourceId', ResId),
+   ('/resourceId', ResourceId),
    ('/reservation', MakeReservation),
    ('/reservationId', ReservationId),
    ('/tag', Tag),
-   ('/userId', MainPage),
    ('/createResource', MakeResource),
    ('/delRes', DeleteReservation),
+   ('/rss', RSSDump), 
 ], debug=True)

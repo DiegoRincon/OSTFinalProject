@@ -23,6 +23,23 @@ indexes:
 
 - kind: Resource
   properties:
+  - name: endTime
+  - name: lastReservation
+
+- kind: Resource
+  properties:
+  - name: endTime
+  - name: lastReservation
+    direction: desc
+
+- kind: Resource
+  properties:
+  - name: endTime
+  - name: startTime
+    direction: desc
+
+- kind: Resource
+  properties:
   - name: owner.email
   - name: timeCreated
     direction: desc

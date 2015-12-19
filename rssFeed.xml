@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+   <channel>
+      <title>Resource RSS Feed</title>
+      <resource>
+	 <owner>{{ resource.owner.email }}</owner>
+	 <name>{{ resource.name }}</name>
+	 <availabilityIntervals>{{ resource.availabilityIntervals|join(', ') }}</availabilityIntervals>
+	 <startTime>{{ resource.startTime }}</startTime>
+	 <endTime>{{ resource.endTime }}</endTime>
+	 <tags>{{ resource.tags|join(', ') }}</tags>
+	 <lastReservation>{{ resource.lastReservation }}</lastReservation>
+	 <timeCreated>{{ resource.timeCreated }}</timeCreated>
+	 <resourceId>{{ resource.resourceId }}</resourceId>
+	 <reservations>
+	    {% for reservation in reservations %}
+	    <reservation>
+	       <owner>{{ reservation.owner.email }}</owner>
+	       <startDate>{{ reservation.startDate }}</startDate>
+	       <endDate>{{ reservation.endDate }}</endDate>
+	       <startTime>{{ reservation.startTime }}</startTime>
+	       <duration>{{ reservation.duration }}</duration>
+	       <resource>{{ reservation.resource.resourceId }}</resource>
+	       <reservationId>{{ reservation.reservationId }}</reservationId>
+	    </reservation>
+	    {% endfor %}
+	 </reservations>
+      </resource>
+   </channel>
+</rss>

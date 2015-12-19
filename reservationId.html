@@ -5,11 +5,14 @@
       <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
    </head>
    <body>
+      <h3 style="color:green">Congratulations! Your reservation is confirmed. Please review the details.</h3>
       <a style="float:right;margin-right:400px" href="/">Home</a>
-      <b>{{ reservation.resource.name }} </b>
+      </h4> Reservation for: <a style="font-size:large" href="/resourceId?resId={{ reservation.resource.resourceId }}">{{ reservation.resource.name }}</a></h4>
       <p>User: <a href="/userId?user={{ reservation.owner.email }}">{{ reservation.owner.nickname }}</a></p>
+      <p>Date: {{ reservation.startDate.strftime('%d/%b/%Y') }}</p>
       <p>Start Time: {{ reservation.startTime }}</p>
-      <p>Duration: {{ reservation.duration }}</p>
+      <p>Duration: {{ reservation.duration }} minutes</p>
+      <a href="/delRes?resId={{ reservation.reservationId }}">Delete</a>
    </body>
 </html>
 {% endautoescape %}
